@@ -9,11 +9,11 @@ defmodule Tentacat do
   end
 
   @user_agent [{"User-agent", "tentacat"}]
-
+  @api_url "https://api.github.com/"
   @type response :: {integer, any} | :jsx.json_term
 
   def process_url(url) do
-    "https://api.github.com/" <> url
+    @api_url <> url
   end
 
   @spec process_response(HTTPoison.Response.t) :: response
