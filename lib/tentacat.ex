@@ -16,10 +16,16 @@ defmodule Tentacat do
     @api_url <> url
   end
 
+  def remove_url(url) do
+    String.replace(url, @api_url, "")
+  end
   @spec process_response(HTTPoison.Response.t) :: response
   def process_response(response) do
     status_code = response.status_code
     headers = response.headers
+    IO.inspect headers
+    links = process_links(headers)
+    IO.inspect links
     body = response.body
     response = unless body == "", do: body |> JSX.decode!,
     else: nil
@@ -61,6 +67,36 @@ defmodule Tentacat do
     request!(method, url, body, headers, options) |> process_response
   end
 
+  defp process_links(headers) do
+    Dict.get(headers, "Link")
+      |> parse_links
+      |> construct_links
+      |> fetch_links_body
+  end
+  defp parse_links(links) do
+    links
+      |> String.replace(~r/<|>|\ |rel[^\ ]*/, "")
+      |> String.split(";")
+      |> Enum.drop(-1)
+  end
+  defp construct_links(links) do
+    base_link = List.first(links) |> String.to_char_list |> List.delete_at(-1) |> List.to_string
+    last_link = List.last(links) |> String.replace(base_link, "") |> String.to_integer
+    construct_links(base_link, last_link, [])
+  end
+  defp construct_links( _, 1, link_list)  do
+    link_list
+  end
+  defp construct_links(base_link, count_down, acc) do
+    appendage =  Integer.to_string(count_down)
+    next = count_down - 1
+    url = remove_url(base_link)
+    link_list = [ url <> appendage ] ++ acc
+    construct_links(url, next, link_list)
+  end
+  defp fetch_links_body([link | links]) do
+    link ++ links
+  end
   @spec build_qs([{atom, binary}]) :: binary
   defp build_qs([]), do: ""
   defp build_qs(kvs), do: to_string('?' ++ URI.encode_query(kvs))
