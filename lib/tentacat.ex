@@ -20,7 +20,7 @@ defmodule Tentacat do
     String.replace(url, @api_url, "")
   end
   @spec process_response(HTTPoison.Response.t) :: response
-  def process_response(response) do
+  def process_response(response, auth \\ nil, body \\ "") do
     status_code = response.status_code
     headers = response.headers
     IO.inspect headers
@@ -95,7 +95,8 @@ defmodule Tentacat do
     construct_links(url, next, link_list)
   end
   defp fetch_links_body([link | links]) do
-    link ++ links
+    IO.inspect link ++ links
+
   end
   @spec build_qs([{atom, binary}]) :: binary
   defp build_qs([]), do: ""
